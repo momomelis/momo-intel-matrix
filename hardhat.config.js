@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
+require("./scripts/manage");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 const config = {

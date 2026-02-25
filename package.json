@@ -13,7 +13,15 @@
     "deploy:mainnet": "hardhat run scripts/deploy.js --network mainnet",
     "deploy:base": "hardhat run scripts/deploy.js --network base",
     "node": "hardhat node",
-    "clean": "hardhat clean"
+    "clean": "hardhat clean",
+    "status": "hardhat status --network",
+    "toggle-presale": "hardhat toggle-presale --network",
+    "toggle-sale": "hardhat toggle-sale --network",
+    "whitelist-add": "hardhat whitelist-add --network",
+    "whitelist-remove": "hardhat whitelist-remove --network",
+    "reveal": "hardhat reveal --network",
+    "set-treasury": "hardhat set-treasury --network",
+    "dao-handoff": "hardhat dao-handoff --network"
   },
   "repository": {
     "type": "git",
