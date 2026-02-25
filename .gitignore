@@ -1,0 +1,30 @@
+# ── Environment / secrets ────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Node ─────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ── Hardhat ──────────────────────────────────────────────────────
+cache/
+artifacts/
+typechain-types/
+deployments/
+coverage/
+coverage.json
+
+# ── Editor ───────────────────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Misc ─────────────────────────────────────────────────────────
+*.log
+dist/
+build/
