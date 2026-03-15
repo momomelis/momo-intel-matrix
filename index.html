@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Momo Intelligence Matrix | DARPA-Grade Analytics Platform</title>
+  <style>
+    :root {
+      --pink: #ec4899;
+      --purple: #a855f7;
+      --cyan: #22d3ee;
+      --dark: #0a0a0f;
+      --darker: #050508;
+      --card: rgba(255,255,255,0.03);
+      --border: rgba(236,72,153,0.2);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 20%, rgba(168,85,247,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(236,72,153,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 50% 50%, rgba(34,211,238,0.03) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(5,5,8,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .logo-icon { font-size: 1.4rem; }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+    .btn:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 12px rgba(236,72,153,0.25); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      border-color: transparent;
+      color: #fff;
+      font-weight: 700;
+    }
+    .btn-primary:hover { opacity: 0.9; color: #fff; box-shadow: 0 0 20px rgba(236,72,153,0.4); }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── Nav tabs ── */
+    .nav-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 24px;
+      background: rgba(5,5,8,0.7);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 14px 20px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+
+    /* ── Main ── */
+    main { position: relative; z-index: 1; padding: 28px 24px; max-width: 1400px; margin: 0 auto; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .section-sub { font-size: 0.8rem; color: var(--muted); letter-spacing: 1px; margin-bottom: 28px; }
+
+    /* ── Grid layouts ── */
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 28px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover { border-color: rgba(236,72,153,0.4); box-shadow: 0 4px 24px rgba(236,72,153,0.08); }
+    .card-label { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .card-value { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+    .card-sub { font-size: 0.75rem; color: var(--muted); }
+    .card-title { font-size: 0.9rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; color: var(--text); }
+
+    .val-pink { color: var(--pink); }
+    .val-purple { color: var(--purple); }
+    .val-cyan { color: var(--cyan); }
+    .val-green { color: #22c55e; }
+    .val-yellow { color: #eab308; }
+
+    /* ── Progress bars ── */
+    .progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--pink), var(--purple));
+      transition: width 1s ease;
+    }
+
+    /* ── Radar chart ── */
+    .radar-wrapper { display: flex; justify-content: center; align-items: center; padding: 20px 0; }
+    svg.radar { overflow: visible; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(236,72,153,0.04); }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .badge-pink { background: rgba(236,72,153,0.15); color: var(--pink); border: 1px solid rgba(236,72,153,0.3); }
+    .badge-purple { background: rgba(168,85,247,0.15); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+    .badge-cyan { background: rgba(34,211,238,0.15); color: var(--cyan); border: 1px solid rgba(34,211,238,0.3); }
+    .badge-green { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-yellow { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+
+    /* ── Knowledge graph ── */
+    #kg-canvas { width: 100%; height: 460px; border-radius: 12px; border: 1px solid var(--border); background: rgba(5,5,8,0.8); }
+
+    /* ── NLP terminal ── */
+    .terminal {
+      background: #020205;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+    .terminal-line { display: flex; gap: 8px; }
+    .t-time { color: var(--muted); flex-shrink: 0; }
+    .t-tag { flex-shrink: 0; }
+    .t-info { color: var(--cyan); }
+    .t-success { color: #22c55e; }
+    .t-warn { color: #eab308; }
+    .t-pink { color: var(--pink); }
+    .t-purple { color: var(--purple); }
+    .cursor { display: inline-block; width: 8px; height: 14px; background: var(--pink); animation: blink 1s step-end infinite; vertical-align: text-bottom; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── Metric rows ── */
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-name { font-size: 0.78rem; color: var(--muted); }
+    .metric-value { font-size: 0.88rem; font-weight: 700; }
+
+    /* ── Command center ── */
+    .cmd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .cmd-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+    .cmd-card:hover { border-color: var(--pink); box-shadow: 0 0 20px rgba(236,72,153,0.12); transform: translateY(-2px); }
+    .cmd-icon { font-size: 2rem; margin-bottom: 12px; }
+    .cmd-title { font-size: 0.85rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+    .cmd-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+    /* ── Timeline ── */
+    .timeline { position: relative; padding-left: 24px; }
+    .timeline::before { content: ''; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--pink), var(--purple), transparent); }
+    .tl-item { position: relative; margin-bottom: 20px; }
+    .tl-dot { position: absolute; left: -21px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 8px var(--pink); }
+    .tl-date { font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+    .tl-label { font-size: 0.82rem; font-weight: 700; margin-bottom: 2px; }
+    .tl-desc { font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(236,72,153,0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(236,72,153,0.6); }
+
+    @media (max-width: 640px) {
+      .header-actions .btn:not(.btn-primary) { display: none; }
+      main { padding: 16px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🛡️</span>
+    <span>Momo Intelligence Matrix</span>
+  </div>
+  <div class="header-actions">
+    <div class="status-dot"></div>
+    <span style="font-size:0.7rem;color:var(--muted);letter-spacing:1px">LIVE</span>
+    <a href="/report" class="btn">📄 DARPA Report</a>
+    <button class="btn btn-primary" onclick="exportData()">⬇ Export</button>
+  </div>
+</header>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showView('darpa')">⚡ DARPA Intel</button>
+  <button class="nav-tab" onclick="showView('graph')">🕸 Knowledge Graph</button>
+  <button class="nav-tab" onclick="showView('nlp')">🧠 NLP Engine</button>
+  <button class="nav-tab" onclick="showView('api')">🔌 API Matrix</button>
+  <button class="nav-tab" onclick="showView('cmd')">🎯 Command Center</button>
+</div>
+
+<main>
+
+  <!-- ═══════════ DARPA INTEL VIEW ═══════════ -->
+  <div class="view active" id="view-darpa">
+    <div class="section-title">DARPA Intelligence Overview</div>
+    <div class="section-sub">Real-time dual-use technology assessment · Profusa biosensor program analytics</div>
+
+    <div class="grid-4" id="kpi-grid"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⚡ Dual-Use Capability Radar</div>
+        <div class="radar-wrapper">
+          <svg class="radar" width="260" height="260" viewBox="-130 -130 260 260" id="radar-svg"></svg>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Program Funding Timeline</div>
+        <div id="funding-chart" style="padding: 8px 0;"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔬 Technology Readiness Levels</div>
+        <div id="trl-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 Competitive Intelligence</div>
+        <table class="data-table" id="comp-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ KNOWLEDGE GRAPH VIEW ═══════════ -->
+  <div class="view" id="view-graph">
+    <div class="section-title">Knowledge Graph</div>
+    <div class="section-sub">Entity relationship mapping · 847 nodes · 2,341 edges · Real-time inference engine</div>
+    <canvas id="kg-canvas"></canvas>
+    <div class="grid-3" style="margin-top:20px;" id="graph-stats"></div>
+  </div>
+
+  <!-- ═══════════ NLP ENGINE VIEW ═══════════ -->
+  <div class="view" id="view-nlp">
+    <div class="section-title">NLP Processing Engine</div>
+    <div class="section-sub">Continuous document ingestion · 12,847 documents indexed · Semantic search enabled</div>
+
+    <div class="grid-4" id="nlp-kpis"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📡 Live Processing Stream</div>
+        <div class="terminal" id="nlp-terminal"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏷 Top Entity Clusters</div>
+        <div id="entity-clusters"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 Sentiment & Signal Analysis</div>
+      <div id="sentiment-bars" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ API MATRIX VIEW ═══════════ -->
+  <div class="view" id="view-api">
+    <div class="section-title">API Intelligence Matrix</div>
+    <div class="section-sub">Integration layer status · Data source health · Pipeline throughput</div>
+
+    <div class="grid-4" id="api-kpis"></div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">🔌 Data Source Registry</div>
+      <table class="data-table" id="api-table"></table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⚙ Pipeline Performance</div>
+        <div id="pipeline-metrics"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Integration Health Map</div>
+        <div id="health-map"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ COMMAND CENTER VIEW ═══════════ -->
+  <div class="view" id="view-cmd">
+    <div class="section-title">Command Center</div>
+    <div class="section-sub">Strategic mission control · Investor readiness · Deployment status</div>
+
+    <div class="cmd-grid">
+      <div class="cmd-card" onclick="window.open('/report','_blank')">
+        <div class="cmd-icon">📄</div>
+        <div class="cmd-title">DARPA INVESTOR REPORT</div>
+        <div class="cmd-desc">Full 50-page strategic intelligence brief. Print-ready PDF export. DARPA dual-use analysis, financial projections, exit scenarios.</div>
+      </div>
+      <div class="cmd-card" onclick="alert('Generating briefing package...')">
+        <div class="cmd-icon">📦</div>
+        <div class="cmd-title">BRIEFING PACKAGE</div>
+        <div class="cmd-desc">Compile executive summary, key metrics, and graph snapshots into a shareable investor briefing packet.</div>
+      </div>
+      <div class="cmd-card" onclick="alert('Running threat assessment...')">
+        <div class="cmd-icon">🔍</div>
+        <div class="cmd-title">THREAT ASSESSMENT</div>
+        <div class="cmd-desc">Competitive landscape scan across DARPA, NIH, and private funding pipelines. Identify convergent R&D vectors.</div>
+      </div>
+      <div class="cmd-card" onclick="alert('Updating market intelligence...')">
+        <div class="cmd-icon">📡</div>
+        <div class="cmd-title">MARKET INTELLIGENCE</div>
+        <div class="cmd-desc">Live femtech and defense market data feeds. $604M addressable market. Track Oura, Garmin, WHOOP movements.</div>
+      </div>
+      <div class="cmd-card" onclick="alert('Loading scenario models...')">
+        <div class="cmd-icon">💰</div>
+        <div class="cmd-title">VALUATION SCENARIOS</div>
+        <div class="cmd-desc">Seed through Series B modeling. Bear / Base / Bull case projections. 10x-30x multiple framework for defense assets.</div>
+      </div>
+      <div class="cmd-card" onclick="alert('Initiating FDA pathway analysis...')">
+        <div class="cmd-icon">🏥</div>
+        <div class="cmd-title">FDA PATHWAY ANALYZER</div>
+        <div class="cmd-desc">Regulatory timeline modeler. 510(k) vs PMA pathway comparison. 24-30 month clearance projection with risk flags.</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card">
+        <div class="card-title">🗓 Deployment Timeline</div>
+        <div class="timeline" id="timeline-items"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Investor Readiness Score</div>
+        <div id="readiness-metrics"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA & METRICS
+// ══════════════════════════════════════════════
+function generateDARPAMetrics() {
+  return {
+    kpis: [
+      { label: 'DARPA Funding Tracked', value: '$23.4M', sub: 'Gov R&D investment', cls: 'val-pink' },
+      { label: 'Documents Indexed', value: '12,847', sub: '+234 this week', cls: 'val-purple' },
+      { label: 'Entity Nodes', value: '847', sub: '2,341 edges mapped', cls: 'val-cyan' },
+      { label: 'Tech Readiness', value: 'TRL 6', sub: 'Demo environment', cls: 'val-green' },
+    ],
+    radar: [
+      { axis: 'Biosensor', value: 0.92 },
+      { axis: 'Dual-Use', value: 0.88 },
+      { axis: 'Defense', value: 0.75 },
+      { axis: 'Femtech', value: 0.85 },
+      { axis: 'FDA Path', value: 0.70 },
+      { axis: 'IP Moat', value: 0.80 },
+    ],
+    trl: [
+      { name: 'Profusa DARPA Integration', level: 6, max: 9, cls: 'val-pink' },
+      { name: 'Wellness Consumer App', level: 8, max: 9, cls: 'val-green' },
+      { name: 'NLP Intelligence Engine', level: 7, max: 9, cls: 'val-cyan' },
+      { name: 'Clinical-Grade Monitoring', level: 4, max: 9, cls: 'val-yellow' },
+      { name: 'Defense Mesh Network', level: 5, max: 9, cls: 'val-purple' },
+    ],
+    competitors: [
+      { name: 'Oura Ring', focus: 'Consumer', val: '$11B', moat: 'Brand/Data', threat: 'Medium' },
+      { name: 'WHOOP', focus: 'Performance', val: '$3.6B', moat: 'Algorithm', threat: 'Low' },
+      { name: 'Garmin', focus: 'Hybrid', val: '$28B', moat: 'Distribution', threat: 'High' },
+      { name: 'Profusa', focus: 'Defense', val: 'Private', moat: 'DARPA / IP', threat: 'Partner' },
+      { name: 'Biolinq', focus: 'CGM', val: '$180M', moat: 'Sensor IP', threat: 'Medium' },
+    ],
+    funding: [
+      { year: '2018', amount: 3.2, label: 'DARPA SBIR Phase I' },
+      { year: '2019', amount: 7.8, label: 'DARPA SBIR Phase II' },
+      { year: '2020', amount: 2.1, label: 'NIH Supplement' },
+      { year: '2021', amount: 5.4, label: 'DARPA Transition' },
+      { year: '2022', amount: 4.9, label: 'DoD Other Trans.' },
+    ]
+  };
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: KPI CARDS
+// ══════════════════════════════════════════════
+function renderKPIs(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(k => `
+    <div class="card">
+      <div class="card-label">${k.label}</div>
+      <div class="card-value ${k.cls}">${k.value}</div>
+      <div class="card-sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: RADAR CHART
+// ══════════════════════════════════════════════
+function renderRadar(axes) {
+  const svg = document.getElementById('radar-svg');
+  if (!svg) return;
+  const n = axes.length;
+  const R = 100;
+  const levels = 4;
+  let html = '';
+
+  // grid
+  for (let l = 1; l <= levels; l++) {
+    const r = (R * l) / levels;
+    const pts = axes.map((_, i) => {
+      const a = (Math.PI * 2 * i / n) - Math.PI / 2;
+      return `${r * Math.cos(a)},${r * Math.sin(a)}`;
+    });
+    html += `<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(236,72,153,0.12)" stroke-width="1"/>`;
+  }
+
+  // spokes + labels
+  axes.forEach((ax, i) => {
+    const a = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const x = R * Math.cos(a), y = R * Math.sin(a);
+    html += `<line x1="0" y1="0" x2="${x}" y2="${y}" stroke="rgba(236,72,153,0.18)" stroke-width="1"/>`;
+    const lx = (R + 18) * Math.cos(a), ly = (R + 18) * Math.sin(a);
+    html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="10" font-family="Courier New">${ax.axis}</text>`;
+  });
+
+  // data polygon
+  const pts = axes.map((ax, i) => {
+    const a = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const r = R * ax.value;
+    return `${r * Math.cos(a)},${r * Math.sin(a)}`;
+  });
+  html += `<polygon points="${pts.join(' ')}" fill="rgba(236,72,153,0.15)" stroke="#ec4899" stroke-width="2"/>`;
+  axes.forEach((ax, i) => {
+    const a = (Math.PI * 2 * i / n) - Math.PI / 2;
+    const r = R * ax.value;
+    html += `<circle cx="${r * Math.cos(a)}" cy="${r * Math.sin(a)}" r="4" fill="#ec4899"/>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: TRL BARS
+// ══════════════════════════════════════════════
+function renderTRL(items) {
+  const el = document.getElementById('trl-bars');
+  if (!el) return;
+  el.innerHTML = items.map(t => `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:0.75rem;color:var(--muted)">${t.name}</span>
+        <span style="font-size:0.75rem;font-weight:700;" class="${t.cls}">TRL ${t.level}/${t.max}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${(t.level/t.max)*100}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: COMPETITOR TABLE
+// ══════════════════════════════════════════════
+function renderCompTable(rows) {
+  const el = document.getElementById('comp-table');
+  if (!el) return;
+  const threatClass = { High: 'badge-yellow', Medium: 'badge-purple', Low: 'badge-green', Partner: 'badge-cyan' };
+  el.innerHTML = `
+    <thead><tr>
+      <th>Company</th><th>Focus</th><th>Valuation</th><th>Moat</th><th>Threat</th>
+    </tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td style="font-weight:700">${r.name}</td>
+      <td>${r.focus}</td>
+      <td style="color:var(--cyan)">${r.val}</td>
+      <td style="color:var(--muted);font-size:0.72rem">${r.moat}</td>
+      <td><span class="badge ${threatClass[r.threat]||'badge-pink'}">${r.threat}</span></td>
+    </tr>`).join('')}</tbody>
+  `;
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: FUNDING CHART (SVG bars)
+// ══════════════════════════════════════════════
+function renderFundingChart(data) {
+  const el = document.getElementById('funding-chart');
+  if (!el) return;
+  const max = Math.max(...data.map(d => d.amount));
+  el.innerHTML = data.map(d => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="width:36px;font-size:0.7rem;color:var(--muted)">${d.year}</span>
+      <div style="flex:1;height:24px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">
+        <div style="width:${(d.amount/max)*100}%;height:100%;background:linear-gradient(90deg,#ec4899,#a855f7);border-radius:4px;display:flex;align-items:center;padding-left:8px;">
+          <span style="font-size:0.68rem;font-weight:700;color:#fff">\$${d.amount}M</span>
+        </div>
+      </div>
+      <span style="width:130px;font-size:0.65rem;color:var(--muted)">${d.label}</span>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: KNOWLEDGE GRAPH
+// ══════════════════════════════════════════════
+function renderKnowledgeGraph() {
+  const canvas = document.getElementById('kg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+
+  const nodes = [
+    { x: 0.5, y: 0.5, label: 'Profusa', r: 22, color: '#ec4899', type: 'core' },
+    { x: 0.25, y: 0.3, label: 'DARPA', r: 18, color: '#a855f7', type: 'agency' },
+    { x: 0.75, y: 0.28, label: 'DoD', r: 15, color: '#a855f7', type: 'agency' },
+    { x: 0.2, y: 0.65, label: 'Femtech', r: 16, color: '#22d3ee', type: 'market' },
+    { x: 0.8, y: 0.65, label: 'FDA', r: 14, color: '#22c55e', type: 'regulator' },
+    { x: 0.5, y: 0.15, label: 'NIH', r: 13, color: '#a855f7', type: 'agency' },
+    { x: 0.15, y: 0.45, label: 'Oura', r: 12, color: '#94a3b8', type: 'competitor' },
+    { x: 0.85, y: 0.45, label: 'WHOOP', r: 11, color: '#94a3b8', type: 'competitor' },
+    { x: 0.4, y: 0.78, label: 'Wellness', r: 13, color: '#22d3ee', type: 'market' },
+    { x: 0.65, y: 0.78, label: 'Defense', r: 13, color: '#ec4899', type: 'market' },
+    { x: 0.35, y: 0.2, label: 'Biosensor IP', r: 11, color: '#eab308', type: 'ip' },
+    { x: 0.65, y: 0.2, label: 'Implantable', r: 10, color: '#eab308', type: 'ip' },
+  ];
+
+  const edges = [
+    [0,1],[0,2],[0,3],[0,4],[0,5],[0,8],[0,9],
+    [1,5],[1,10],[1,11],[2,9],[3,8],[4,8],[4,9],
+    [6,3],[7,3],[10,11],
+  ];
+
+  const W = canvas.width, H = canvas.height;
+  const mapped = nodes.map(n => ({ ...n, px: n.x * W, py: n.y * H }));
+
+  // Draw edges
+  edges.forEach(([a, b]) => {
+    ctx.beginPath();
+    ctx.moveTo(mapped[a].px, mapped[a].py);
+    ctx.lineTo(mapped[b].px, mapped[b].py);
+    ctx.strokeStyle = 'rgba(236,72,153,0.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+
+  // Draw nodes
+  mapped.forEach(n => {
+    // glow
+    const grad = ctx.createRadialGradient(n.px, n.py, 0, n.px, n.py, n.r * 2);
+    grad.addColorStop(0, n.color + '44');
+    grad.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(n.px, n.py, n.r * 2, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // node circle
+    ctx.beginPath();
+    ctx.arc(n.px, n.py, n.r, 0, Math.PI * 2);
+    ctx.fillStyle = n.color + '22';
+    ctx.fill();
+    ctx.strokeStyle = n.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // label
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = `bold ${Math.max(9, n.r * 0.6)}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.label, n.px, n.py);
+  });
+}
+
+function renderGraphStats() {
+  const stats = [
+    { label: 'Total Nodes', value: '847', sub: 'Entities tracked', cls: 'val-pink' },
+    { label: 'Edge Connections', value: '2,341', sub: 'Relationships mapped', cls: 'val-purple' },
+    { label: 'Inference Paths', value: '14,892', sub: 'Active reasoning chains', cls: 'val-cyan' },
+    { label: 'Cluster Density', value: '0.87', sub: 'Graph cohesion score', cls: 'val-green' },
+    { label: 'New Entities', value: '+34', sub: 'Added this session', cls: 'val-yellow' },
+    { label: 'Confidence Score', value: '94.2%', sub: 'Entity resolution', cls: 'val-pink' },
+  ];
+  renderKPIs('graph-stats', stats);
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: NLP ENGINE
+// ══════════════════════════════════════════════
+function renderNLPView() {
+  renderKPIs('nlp-kpis', [
+    { label: 'Documents Indexed', value: '12,847', sub: '+234 this week', cls: 'val-pink' },
+    { label: 'Entities Extracted', value: '94,312', sub: 'NER pipeline', cls: 'val-purple' },
+    { label: 'Topics Modeled', value: '387', sub: 'LDA clusters', cls: 'val-cyan' },
+    { label: 'Avg Confidence', value: '91.4%', sub: 'Classification acc.', cls: 'val-green' },
+  ]);
+
+  const lines = [
+    { time: '17:21:04', tag: 'INFO', cls: 't-info', msg: 'Ingesting DARPA BAA HR001123S0009 — Profusa subsection...' },
+    { time: '17:21:05', tag: 'EXTRACT', cls: 't-pink', msg: 'NER: [DARPA] [Profusa] [biosensor] [hydrogel implant] [continuous monitoring]' },
+    { time: '17:21:06', tag: 'SENTIMENT', cls: 't-success', msg: 'Signal: BULLISH 0.87 — dual-use positioning strong' },
+    { time: '17:21:07', tag: 'TOPIC', cls: 't-purple', msg: 'Cluster match: Implantable_Biosensor_Defense (prob 0.94)' },
+    { time: '17:21:08', tag: 'INGEST', cls: 't-info', msg: 'Loading NIH R01 grant corpus — 342 documents queued' },
+    { time: '17:21:09', tag: 'GRAPH', cls: 't-cyan', msg: 'Edge created: Profusa → DoD_Contract_2023 (weight 0.91)' },
+    { time: '17:21:10', tag: 'ALERT', cls: 't-warn', msg: 'Competitive signal: Biolinq Series B activity detected' },
+    { time: '17:21:11', tag: 'NLP', cls: 't-purple', msg: 'Summarizing: DARPA Profusa program overview → 3 sentences' },
+    { time: '17:21:12', tag: 'INDEX', cls: 't-success', msg: 'Committed 18 new documents to vector store (dim=1536)' },
+    { time: '17:21:13', tag: 'READY', cls: 't-pink', msg: 'Semantic search index updated · 94.2% recall@10 ▋' },
+  ];
+
+  const term = document.getElementById('nlp-terminal');
+  if (term) {
+    term.innerHTML = lines.map(l => `
+      <div class="terminal-line">
+        <span class="t-time">${l.time}</span>
+        <span class="t-tag ${l.cls}">[${l.tag}]</span>
+        <span style="color:var(--text)">${l.msg}</span>
+      </div>
+    `).join('') + '<span class="cursor"></span>';
+  }
+
+  const clusters = [
+    { name: 'Biosensor / Implantable Tech', count: 4821, pct: 88 },
+    { name: 'DARPA Defense Programs', count: 3102, pct: 72 },
+    { name: 'Femtech / Women\'s Health', count: 2847, pct: 65 },
+    { name: 'FDA Regulatory Pathways', count: 1934, pct: 52 },
+    { name: 'Subscription SaaS Valuation', count: 1201, pct: 38 },
+  ];
+  const ecEl = document.getElementById('entity-clusters');
+  if (ecEl) {
+    ecEl.innerHTML = clusters.map(c => `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:0.75rem;color:var(--text)">${c.name}</span>
+          <span style="font-size:0.72rem;color:var(--muted)">${c.count.toLocaleString()} docs</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${c.pct}%"></div></div>
+      </div>
+    `).join('');
+  }
+
+  const sentiments = [
+    { label: 'Defense Market', score: 0.87, cls: 'val-pink' },
+    { label: 'Regulatory', score: 0.61, cls: 'val-yellow' },
+    { label: 'Investor Interest', score: 0.92, cls: 'val-green' },
+    { label: 'Competitive Threat', score: 0.44, cls: 'val-cyan' },
+  ];
+  const sbEl = document.getElementById('sentiment-bars');
+  if (sbEl) {
+    sbEl.innerHTML = sentiments.map(s => `
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-size:0.75rem;color:var(--muted)">${s.label}</span>
+          <span style="font-size:0.82rem;font-weight:700;" class="${s.cls}">${(s.score*100).toFixed(0)}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${s.score*100}%"></div></div>
+      </div>
+    `).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: API MATRIX
+// ══════════════════════════════════════════════
+function renderAPIView() {
+  renderKPIs('api-kpis', [
+    { label: 'Active Sources', value: '24', sub: '2 degraded', cls: 'val-green' },
+    { label: 'API Calls / min', value: '3,840', sub: 'Peak: 12,200', cls: 'val-cyan' },
+    { label: 'Uptime SLA', value: '99.7%', sub: '30-day rolling', cls: 'val-pink' },
+    { label: 'Data Freshness', value: '<2 min', sub: 'Avg latency', cls: 'val-purple' },
+  ]);
+
+  const sources = [
+    { name: 'DARPA Contract DB', type: 'REST', records: '14,200', status: 'Active', latency: '120ms' },
+    { name: 'PubMed / NIH API', type: 'REST', records: '6,847', status: 'Active', latency: '340ms' },
+    { name: 'USPTO Patent Feed', type: 'XML', records: '3,102', status: 'Active', latency: '280ms' },
+    { name: 'SEC EDGAR Filings', type: 'REST', records: '1,924', status: 'Active', latency: '190ms' },
+    { name: 'Crunchbase Pro', type: 'GraphQL', records: '2,340', status: 'Active', latency: '210ms' },
+    { name: 'FDA 510(k) Database', type: 'REST', records: '892', status: 'Active', latency: '160ms' },
+    { name: 'DoD SAM.gov', type: 'REST', records: '4,110', status: 'Degraded', latency: '1,200ms' },
+    { name: 'ClinicalTrials.gov', type: 'REST', records: '731', status: 'Active', latency: '440ms' },
+  ];
+
+  const apiTable = document.getElementById('api-table');
+  if (apiTable) {
+    apiTable.innerHTML = `
+      <thead><tr><th>Source</th><th>Type</th><th>Records</th><th>Latency</th><th>Status</th></tr></thead>
+      <tbody>${sources.map(s => `<tr>
+        <td style="font-weight:700">${s.name}</td>
+        <td><span class="badge badge-purple">${s.type}</span></td>
+        <td style="color:var(--cyan)">${s.records}</td>
+        <td style="color:var(--muted);font-size:0.75rem">${s.latency}</td>
+        <td><span class="badge ${s.status==='Active'?'badge-green':'badge-yellow'}">${s.status}</span></td>
+      </tr>`).join('')}</tbody>
+    `;
+  }
+
+  const pipes = [
+    { name: 'Ingestion Pipeline', val: '98.2%', bar: 98 },
+    { name: 'NLP Processing', val: '94.7%', bar: 95 },
+    { name: 'Graph Updates', val: '99.1%', bar: 99 },
+    { name: 'Vector Indexing', val: '96.4%', bar: 96 },
+    { name: 'Alert Delivery', val: '99.8%', bar: 100 },
+  ];
+  const pmEl = document.getElementById('pipeline-metrics');
+  if (pmEl) {
+    pmEl.innerHTML = pipes.map(p => `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:0.75rem;color:var(--muted)">${p.name}</span>
+          <span style="font-size:0.75rem;font-weight:700;color:var(--green)">${p.val}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${p.bar}%"></div></div>
+      </div>
+    `).join('');
+  }
+
+  const hmEl = document.getElementById('health-map');
+  if (hmEl) {
+    const health = [
+      { region: 'DARPA APIs', ok: 4, warn: 0, err: 0 },
+      { region: 'Gov Databases', ok: 5, warn: 1, err: 0 },
+      { region: 'Private Intel', ok: 3, warn: 0, err: 0 },
+      { region: 'Research Feeds', ok: 6, warn: 0, err: 0 },
+      { region: 'Market Data', ok: 4, warn: 1, err: 0 },
+    ];
+    hmEl.innerHTML = health.map(h => `
+      <div class="metric-row">
+        <span class="metric-name">${h.region}</span>
+        <span style="display:flex;gap:8px;align-items:center;font-size:0.75rem;">
+          <span style="color:#22c55e">●${h.ok} ok</span>
+          ${h.warn ? `<span style="color:#eab308">●${h.warn} warn</span>` : ''}
+          ${h.err ? `<span style="color:#ef4444">●${h.err} err</span>` : ''}
+        </span>
+      </div>
+    `).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RENDER: COMMAND CENTER
+// ══════════════════════════════════════════════
+function renderCmdView() {
+  const timeline = [
+    { date: 'Q1 2025', label: 'Platform Alpha Launch', desc: 'Intelligence Matrix v1 · Internal testing', done: true },
+    { date: 'Q2 2025', label: 'Seed Round Close', desc: '$2-5M · DARPA dual-use positioning', done: true },
+    { date: 'Q3 2025', label: 'Wellness Beta', desc: 'Consumer app · 1,000 beta users', done: false },
+    { date: 'Q4 2025', label: 'Wellness Launch', desc: 'App Store · Subscription revenue begins', done: false },
+    { date: 'Q2 2026', label: 'Defense Pilot', desc: 'DoD partnership · Field validation', done: false },
+    { date: 'Q3 2027', label: 'FDA Clearance Target', desc: '510(k) submission · Clinical-grade launch', done: false },
+  ];
+  const tlEl = document.getElementById('timeline-items');
+  if (tlEl) {
+    tlEl.innerHTML = timeline.map(t => `
+      <div class="tl-item">
+        <div class="tl-dot" style="background:${t.done?'#22c55e':'var(--pink)'};box-shadow:0 0 8px ${t.done?'#22c55e':'var(--pink)'}"></div>
+        <div class="tl-date">${t.date}</div>
+        <div class="tl-label" style="color:${t.done?'#22c55e':'var(--text)'}">${t.label}</div>
+        <div class="tl-desc">${t.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  const readiness = [
+    { name: 'Investor Deck', val: '92%', cls: 'val-green' },
+    { name: 'Financial Model', val: '88%', cls: 'val-green' },
+    { name: 'Technical Demo', val: '95%', cls: 'val-green' },
+    { name: 'Legal / Cap Table', val: '74%', cls: 'val-yellow' },
+    { name: 'Market Research', val: '97%', cls: 'val-green' },
+    { name: 'Advisory Board', val: '60%', cls: 'val-yellow' },
+  ];
+  const rmEl = document.getElementById('readiness-metrics');
+  if (rmEl) {
+    rmEl.innerHTML = readiness.map(r => `
+      <div class="metric-row">
+        <span class="metric-name">${r.name}</span>
+        <span class="metric-value ${r.cls}">${r.val}</span>
+      </div>
+    `).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+//  VIEW SWITCHING
+// ══════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (id === 'graph') { setTimeout(renderKnowledgeGraph, 50); renderGraphStats(); }
+  if (id === 'nlp') renderNLPView();
+  if (id === 'api') renderAPIView();
+  if (id === 'cmd') renderCmdView();
+}
+
+function exportData() {
+  alert('Exporting intelligence package...\n\nIn production this would generate a JSON/CSV bundle of all current metrics and entity graphs.');
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const d = generateDARPAMetrics();
+  renderKPIs('kpi-grid', d.kpis);
+  renderRadar(d.radar);
+  renderTRL(d.trl);
+  renderCompTable(d.competitors);
+  renderFundingChart(d.funding);
+});
+
+window.addEventListener('resize', () => {
+  const graphView = document.getElementById('view-graph');
+  if (graphView && graphView.classList.contains('active')) renderKnowledgeGraph();
+});
+</script>
+</body>
+</html>
