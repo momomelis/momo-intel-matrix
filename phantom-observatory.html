@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phantom Observatory</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;1,400&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+background: #000;
+overflow: hidden;
+font-family: 'Cinzel', serif;
+cursor: crosshair;
+}
+
+canvas { display: block; }
+
+#map-container {
+position: relative;
+width: 100vw;
+height: 100vh;
+}
+
+#bg-canvas {
+position: absolute;
+inset: 0;
+z-index: 0;
+}
+
+#map-canvas {
+position: absolute;
+inset: 0;
+z-index: 1;
+}
+
+/* TITLE */
+#world-title {
+position: absolute;
+top: 28px;
+left: 50%;
+transform: translateX(-50%);
+z-index: 10;
+text-align: center;
+pointer-events: none;
+}
+#world-title h1 {
+font-size: clamp(14px, 2.5vw, 22px);
+letter-spacing: 0.35em;
+color: #c8a8ff;
+text-shadow: 0 0 20px #9b59ff, 0 0 40px #6a00ff;
+font-weight: 900;
+text-transform: uppercase;
+}
+#world-title .subtitle {
+font-family: 'Crimson Text', serif;
+font-style: italic;
+font-size: clamp(10px, 1.5vw, 13px);
+color: #6a4a8a;
+letter-spacing: 0.2em;
+margin-top: 4px;
+}
+
+/* LOCATION PANEL */
+#location-panel {
+position: absolute;
+bottom: -300px;
+left: 50%;
+transform: translateX(-50%);
+width: min(480px, 90vw);
+background: linear-gradient(160deg, #0a0010 0%, #060008 100%);
+border: 1px solid #4a1a6a;
+border-bottom: none;
+border-radius: 16px 16px 0 0;
+padding: 28px 32px 40px;
+z-index: 20;
+transition: bottom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+box-shadow: 0 -20px 60px rgba(100, 0, 180, 0.3);
+}
+#location-panel.open { bottom: 0; }
+
+#panel-icon {
+font-size: 2.8em;
+margin-bottom: 10px;
+display: block;
+filter: drop-shadow(0 0 12px currentColor);
+}
+#panel-name {
+font-size: clamp(16px, 3vw, 22px);
+color: #e0c8ff;
+letter-spacing: 0.25em;
+text-transform: uppercase;
+margin-bottom: 6px;
+text-shadow: 0 0 15px #9b59ff;
+}
+#panel-region {
+font-family: 'Crimson Text', serif;
+font-size: 12px;
+letter-spacing: 0.3em;
+color: #5a3a7a;
+text-transform: uppercase;
+margin-bottom: 16px;
+}
+#panel-divider {
+width: 60px;
+height: 1px;
+background: linear-gradient(90deg, transparent, #6a00ff, transparent);
+margin: 0 0 16px 0;
+}
+#panel-lore {
+font-family: 'Crimson Text', serif;
+font-size: clamp(13px, 2vw, 15px);
+color: #a088b8;
+line-height: 1.75;
+margin-bottom: 20px;
+}
+#panel-traits {
+display: flex;
+gap: 8px;
+flex-wrap: wrap;
+}
+.trait-tag {
+font-size: 10px;
+letter-spacing: 0.2em;
+color: #7a4a9a;
+border: 1px solid #3a1a5a;
+padding: 4px 10px;
+border-radius: 20px;
+text-transform: uppercase;
+}
+
+#close-btn {
+position: absolute;
+top: 16px;
+right: 20px;
+background: none;
+border: none;
+color: #4a2a6a;
+font-size: 20px;
+cursor: pointer;
+font-family: 'Cinzel', serif;
+transition: color 0.2s;
+}
+#close-btn:hover { color: #c8a8ff; }
+
+/* COMPASS */
+#compass {
+position: absolute;
+bottom: 24px;
+right: 28px;
+z-index: 10;
+opacity: 0.45;
+pointer-events: none;
+font-size: 11px;
+color: #5a3a7a;
+letter-spacing: 0.15em;
+text-align: center;
+}
+#compass-ring {
+width: 56px;
+height: 56px;
+border: 1px solid #3a1a5a;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+margin: 0 auto 4px;
+position: relative;
+}
+#compass-ring::before {
+content: '✦';
+font-size: 18px;
+color: #4a2a6a;
+}
+
+/* PARTICLE overlay */
+#particles { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+</style>
+
+</head>
+<body>
+<div id="map-container">
+  <canvas id="bg-canvas"></canvas>
+  <canvas id="map-canvas"></canvas>
+  <div id="particles"></div>
+
+  <div id="world-title">
+    <h1>👁 Phantom Observatory</h1>
+    <div class="subtitle">a cartography of the unknowable</div>
+  </div>
+
+  <div id="location-panel">
+    <button id="close-btn" onclick="closePanel()">✕</button>
+    <span id="panel-icon">👁️</span>
+    <div id="panel-name">Location</div>
+    <div id="panel-region">Region · Quadrant</div>
+    <div id="panel-divider"></div>
+    <div id="panel-lore">Lore goes here.</div>
+    <div id="panel-traits"></div>
+  </div>
+
+  <div id="compass">
+    <div id="compass-ring"></div>
+    VOID NORTH
+  </div>
+</div>
+
+<script>
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+
+// ─── LOCATIONS ───────────────────────────────────────────────
+const LOCATIONS = [
+  {
+    id: 'observatory',
+    name: 'Phantom Observatory',
+    icon: '👁️',
+    region: 'Apex Tier · The Watchpost',
+    rx: 0.5, ry: 0.14,
+    color: '#c8a8ff',
+    glow: '#9b59ff',
+    size: 18,
+    lore: 'A spire of black glass that sees what eyes were never meant to witness. The Observatory does not observe the stars — it observes the observers. Those who enter report hearing their own thoughts played back to them, slightly wrong.',
+    traits: ['PERCEPTION', 'FORBIDDEN SIGHT', 'LIMINAL SPACE']
+  },
+  {
+    id: 'abyss',
+    name: 'Abyss Gardens',
+    icon: '❤️',
+    region: 'Western Reach · The Bleeding Vale',
+    rx: 0.18, ry: 0.42,
+    color: '#ff4a6a',
+    glow: '#cc0033',
+    size: 15,
+    lore: 'Flowers that bloom only in complete darkness. Their petals are the color of old wounds and they drink longing instead of water. Pilgrims come to leave grief here. The gardens are well-fed.',
+    traits: ['GRIEF', 'BEAUTY', 'TRANSFORMATION', 'DARK GROWTH']
+  },
+  {
+    id: 'furnace',
+    name: 'Entropy Furnace',
+    icon: '🔥',
+    region: 'Eastern Waste · The Dissolution',
+    rx: 0.82, ry: 0.38,
+    color: '#ff8c32',
+    glow: '#cc4400',
+    size: 15,
+    lore: 'Everything ends here eventually. The Furnace does not burn things — it unmakes the concept of them. Scholars debate whether the Furnace is a place or a process. The Furnace does not care about the debate.',
+    traits: ['ENTROPY', 'UNMAKING', 'HEAT', 'END-STATE']
+  },
+  {
+    id: 'void',
+    name: 'Void Basin',
+    icon: '🖤',
+    region: 'Central Hollow · The Absence',
+    rx: 0.5, ry: 0.52,
+    color: '#8866cc',
+    glow: '#440088',
+    size: 20,
+    lore: 'The lowest point in a world without a bottom. The Basin collects what falls through the cracks between existing and not existing. Some things that fall in come back different. Most do not come back.',
+    traits: ['NULL SPACE', 'COLLECTION', 'TRANSIT', 'THE BETWEEN']
+  },
+  {
+    id: 'crags',
+    name: 'Gravitation Crags',
+    icon: '🩸',
+    region: 'Southern Rift · The Pulling Stones',
+    rx: 0.5, ry: 0.78,
+    color: '#cc3355',
+    glow: '#880022',
+    size: 14,
+    lore: 'Rock formations that pull more than weight. Stand too long at the Crags and they begin pulling at other things — memories, intentions, the gravity of your own name. The stones are old. They have pulled at everything.',
+    traits: ['MAGNETISM', 'EXTRACTION', 'ANCIENT', 'WEIGHT']
+  }
+];
+
+// ─── CANVAS SETUP ─────────────────────────────────────────────
+const bgCanvas = document.getElementById('bg-canvas');
+const bgCtx = bgCanvas.getContext('2d');
+const mapCanvas = document.getElementById('map-canvas');
+const mapCtx = mapCanvas.getContext('2d');
+
+function resize() {
+  bgCanvas.width = mapCanvas.width = W();
+  bgCanvas.height = mapCanvas.height = H();
+  drawBg();
+  drawMap();
+}
+
+// ─── BACKGROUND ───────────────────────────────────────────────
+let stars = [];
+function initStars() {
+  stars = Array.from({length: 260}, () => ({
+    x: Math.random(), y: Math.random(),
+    r: Math.random() * 1.2 + 0.2,
+    a: Math.random(),
+    speed: Math.random() * 0.006 + 0.002,
+    phase: Math.random() * Math.PI * 2
+  }));
+}
+
+function drawBg() {
+  const w = W(), h = H();
+  bgCtx.clearRect(0, 0, w, h);
+  // Deep space gradient
+  const g = bgCtx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w*0.8);
+  g.addColorStop(0, '#080012');
+  g.addColorStop(0.5, '#040009');
+  g.addColorStop(1, '#020006');
+  bgCtx.fillStyle = g;
+  bgCtx.fillRect(0, 0, w, h);
+
+  // Nebula wash
+  const n = bgCtx.createRadialGradient(w*0.3, h*0.3, 0, w*0.3, h*0.3, w*0.6);
+  n.addColorStop(0, 'rgba(80,0,140,0.12)');
+  n.addColorStop(1, 'transparent');
+  bgCtx.fillStyle = n;
+  bgCtx.fillRect(0, 0, w, h);
+
+  const n2 = bgCtx.createRadialGradient(w*0.75, h*0.65, 0, w*0.75, h*0.65, w*0.4);
+  n2.addColorStop(0, 'rgba(140,0,60,0.08)');
+  n2.addColorStop(1, 'transparent');
+  bgCtx.fillStyle = n2;
+  bgCtx.fillRect(0, 0, w, h);
+}
+
+function animateStars(t) {
+  const w = W(), h = H();
+  bgCtx.clearRect(0, 0, w, h);
+  drawBg();
+  stars.forEach(s => {
+    s.a = 0.3 + 0.5 * Math.sin(t * s.speed + s.phase);
+    bgCtx.beginPath();
+    bgCtx.arc(s.x * w, s.y * h, s.r, 0, Math.PI*2);
+    bgCtx.fillStyle = `rgba(200,180,255,${s.a})`;
+    bgCtx.fill();
+  });
+}
+
+// ─── MAP DRAWING ──────────────────────────────────────────────
+function lx(rx) { return rx * W(); }
+function ly(ry) { return ry * H(); }
+
+function drawConnections() {
+  const pairs = [
+    ['observatory','abyss'], ['observatory','furnace'],
+    ['observatory','void'], ['abyss','void'],
+    ['furnace','void'], ['void','crags']
+  ];
+  pairs.forEach(([a, b]) => {
+    const locA = LOCATIONS.find(l=>l.id===a);
+    const locB = LOCATIONS.find(l=>l.id===b);
+    mapCtx.beginPath();
+    mapCtx.moveTo(lx(locA.rx), ly(locA.ry));
+    // curve
+    const cx = (lx(locA.rx)+lx(locB.rx))/2 + (Math.random()-0.5)*60;
+    const cy = (ly(locA.ry)+ly(locB.ry))/2 + (Math.random()-0.5)*40;
+    mapCtx.quadraticCurveTo(cx, cy, lx(locB.rx), ly(locB.ry));
+    mapCtx.strokeStyle = 'rgba(80,30,120,0.25)';
+    mapCtx.lineWidth = 1;
+    mapCtx.setLineDash([4,8]);
+    mapCtx.stroke();
+    mapCtx.setLineDash([]);
+  });
+}
+
+let pulseT = 0;
+function drawMap() {
+  const w = W(), h = H();
+  mapCtx.clearRect(0, 0, w, h);
+  drawConnections();
+
+  LOCATIONS.forEach(loc => {
+    const x = lx(loc.rx), y = ly(loc.ry);
+    const pulse = 1 + 0.15 * Math.sin(pulseT * 0.04 + loc.rx * 10);
+    const r = loc.size * pulse;
+
+    // Outer glow
+    const grd = mapCtx.createRadialGradient(x, y, 0, x, y, r * 3.5);
+    grd.addColorStop(0, loc.glow + '55');
+    grd.addColorStop(0.5, loc.glow + '22');
+    grd.addColorStop(1, 'transparent');
+    mapCtx.beginPath();
+    mapCtx.arc(x, y, r * 3.5, 0, Math.PI*2);
+    mapCtx.fillStyle = grd;
+    mapCtx.fill();
+
+    // Ring
+    mapCtx.beginPath();
+    mapCtx.arc(x, y, r + 4, 0, Math.PI*2);
+    mapCtx.strokeStyle = loc.color + '66';
+    mapCtx.lineWidth = 1;
+    mapCtx.stroke();
+
+    // Core
+    const core = mapCtx.createRadialGradient(x, y, 0, x, y, r);
+    core.addColorStop(0, loc.color + 'ff');
+    core.addColorStop(0.4, loc.color + 'cc');
+    core.addColorStop(1, loc.glow + '88');
+    mapCtx.beginPath();
+    mapCtx.arc(x, y, r, 0, Math.PI*2);
+    mapCtx.fillStyle = core;
+    mapCtx.fill();
+
+    // Icon
+    mapCtx.font = `${r * 1.1}px serif`;
+    mapCtx.textAlign = 'center';
+    mapCtx.textBaseline = 'middle';
+    mapCtx.fillText(loc.icon, x, y);
+
+    // Label
+    const fs = Math.max(9, Math.min(13, w * 0.012));
+    mapCtx.font = `600 ${fs}px 'Cinzel', serif`;
+    mapCtx.textAlign = 'center';
+    mapCtx.textBaseline = 'top';
+    mapCtx.fillStyle = loc.color;
+    mapCtx.shadowColor = loc.glow;
+    mapCtx.shadowBlur = 10;
+    mapCtx.fillText(loc.name.toUpperCase(), x, y + r + 10);
+    mapCtx.shadowBlur = 0;
+  });
+}
+
+// ─── INTERACTION ──────────────────────────────────────────────
+let activeId = null;
+
+function getHit(ex, ey) {
+  return LOCATIONS.find(loc => {
+    const dx = ex - lx(loc.rx), dy = ey - ly(loc.ry);
+    return Math.sqrt(dx*dx+dy*dy) < loc.size * 2 + 10;
+  });
+}
+
+function openPanel(loc) {
+  if (activeId === loc.id) { closePanel(); return; }
+  activeId = loc.id;
+  document.getElementById('panel-icon').textContent = loc.icon;
+  document.getElementById('panel-name').textContent = loc.name;
+  document.getElementById('panel-region').textContent = loc.region;
+  document.getElementById('panel-lore').textContent = loc.lore;
+  const traitsEl = document.getElementById('panel-traits');
+  traitsEl.innerHTML = loc.traits.map(t=>`<span class="trait-tag">${t}</span>`).join('');
+  document.getElementById('location-panel').classList.add('open');
+}
+
+function closePanel() {
+  activeId = null;
+  document.getElementById('location-panel').classList.remove('open');
+}
+
+mapCanvas.addEventListener('click', e => {
+  const rect = mapCanvas.getBoundingClientRect();
+  const hit = getHit(e.clientX - rect.left, e.clientY - rect.top);
+  if (hit) openPanel(hit);
+  else closePanel();
+});
+
+mapCanvas.addEventListener('mousemove', e => {
+  const rect = mapCanvas.getBoundingClientRect();
+  const hit = getHit(e.clientX - rect.left, e.clientY - rect.top);
+  mapCanvas.style.cursor = hit ? 'pointer' : 'crosshair';
+});
+
+// Touch support
+mapCanvas.addEventListener('touchend', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const rect = mapCanvas.getBoundingClientRect();
+  const hit = getHit(t.clientX - rect.left, t.clientY - rect.top);
+  if (hit) openPanel(hit);
+  else closePanel();
+});
+
+// ─── ANIMATION LOOP ───────────────────────────────────────────
+function loop(t) {
+  pulseT = t;
+  animateStars(t);
+  drawMap();
+  requestAnimationFrame(loop);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener('resize', resize);
+initStars();
+resize();
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>
